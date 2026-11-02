@@ -6,8 +6,10 @@
 //   JOB_TOKEN  (optional but recommended: a password the user types in the UI;
 //               without it, anyone who opens the site could queue commands)
 async function redis(path, method = "GET") {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Vercel's Upstash integration actually sets KV_REST_API_URL / KV_REST_API_TOKEN,
+  // not UPSTASH_*. Accept both, KV_* first (what Vercel really provides).
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return null;
   const r = await fetch(`${url.replace(/\/$/, "")}${path}`, {
     method, headers: { Authorization: `Bearer ${token}` },
@@ -21,7 +23,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "cmd required, max 500 chars" });
   const jobToken = process.env.JOB_TOKEN;
   if (jobToken && token !== jobToken) return res.status(401).json({ error: "bad token" });
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)
+  if (!(process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL) || !(process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN))
     return res.status(503).json({ error: "queue not configured yet: create a KV (Upstash Redis) in Vercel Storage, connect it to this project, and redeploy." });
   const id = crypto.randomUUID();
   const job = { id, cmd: cmd.trim(), status: "pending", createdAt: Date.now() };

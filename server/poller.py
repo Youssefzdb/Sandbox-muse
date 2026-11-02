@@ -18,8 +18,8 @@ Note: this VM is ephemeral - a restart stops the worker, it must be restarted.
 import json, os, shlex, subprocess, sys, time, urllib.parse, urllib.request
 from pathlib import Path
 
-URL = os.environ.get("UPSTASH_REDIS_REST_URL", "").rstrip("/")
-TOKEN = os.environ.get("UPSTASH_REDIS_REST_TOKEN", "")
+URL = (os.environ.get("KV_REST_API_URL") or os.environ.get("UPSTASH_REDIS_REST_URL", "")).rstrip("/")
+TOKEN = os.environ.get("KV_REST_API_TOKEN") or os.environ.get("UPSTASH_REDIS_REST_TOKEN", "")
 WORKDIR = Path(os.environ.get("PROJECT_DIR", str(Path.home() / "workspace/opencode/projects/test-project"))).resolve()
 ALLOWED = {"ls", "cat", "head", "tail", "wc", "pwd", "node", "npm", "npx", "git", "mkdir", "cp", "mv", "python3", "rm"}
 FORBIDDEN = set(";|&`$><\n\r")
