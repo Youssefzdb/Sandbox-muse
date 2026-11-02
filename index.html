@@ -1,22 +1,48 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sandbox Muse — Bridge</title>
-<style>body{font-family:system-ui,sans-serif;max-width:720px;margin:2em auto;padding:0 1em}input{width:100%;padding:.6em}button{padding:.6em 1em;margin-top:.5em}pre{white-space:pre-wrap;background:#111;color:#eee;padding:1em;overflow:auto}</style>
+<title>Sandbox Muse — Bridge (queue)</title>
+<style>body{font-family:system-ui,sans-serif;max-width:720px;margin:2em auto;padding:0 1em}input{width:100%;padding:.6em;margin:.3em 0}button{padding:.6em 1em;margin-top:.5em}pre{white-space:pre-wrap;background:#111;color:#eee;padding:1em;overflow:auto;min-height:6em}</style>
 </head><body>
 <h1>Sandbox Muse — Bridge</h1>
-<p>Type a command allowed by the bridge (for example <code>ls -la</code>). The API key is <strong>never</strong> in this page — it lives only in Vercel Environment Variables, server-side, in <code>api/exec.js</code>. If the bridge is not published yet, you will see a clear “bridge not configured yet” message — that is expected until BRIDGE_URL and BRIDGE_API_KEY are set in Vercel.</p>
+<p>Reverse-polling mode: Vercel does <strong>not</strong> call the sandbox. It queues your command, the sandbox worker pulls it, runs it (allowlist only, test-project dir only), and streams the output back here, line by line.</p>
+<p><small>Token is typed by you and kept only in your browser (localStorage). It is never in this repo. If no JOB_TOKEN is set in Vercel, leave it empty.</small></p>
+<label>Job token (if set in Vercel)</label>
+<input id="token" type="password" placeholder="job token">
+<label>Command (allowlist only, e.g. ls -la)</label>
 <input id="cmd" placeholder="ls -la" value="ls -la">
 <button onclick="run()">Run</button>
+<span id="status"></span>
 <pre id="out"></pre>
 <script>
+const tokenEl = document.getElementById('token');
+tokenEl.value = localStorage.getItem('sandboxmuse_token') || '';
+tokenEl.addEventListener('change', () => localStorage.setItem('sandboxmuse_token', tokenEl.value));
 async function run(){
   const cmd = document.getElementById('cmd').value;
+  const token = tokenEl.value;
   const out = document.getElementById('out');
-  out.textContent = 'Running…';
+  const status = document.getElementById('status');
+  out.textContent = 'Queuing…'; status.textContent = '';
   try {
-    const r = await fetch('/api/exec', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cmd})});
+    const r = await fetch('/api/queue', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cmd, token})});
     const data = await r.json();
-    out.textContent = JSON.stringify(data, null, 2);
+    if (!r.ok) { out.textContent = JSON.stringify(data, null, 2); return; }
+    const id = data.jobId;
+    status.textContent = 'Job ' + id + ' — waiting for worker…';
+    let shown = 0;
+    for (let i = 0; i < 120; i++) {
+      await new Promise(x => setTimeout(x, 1000));
+      const jr = await fetch('/api/job?id=' + encodeURIComponent(id));
+      const jd = await jr.json();
+      if (!jr.ok) { out.textContent = JSON.stringify(jd, null, 2); break; }
+      status.textContent = 'Status: ' + jd.job.status;
+      const log = jd.log || [];
+      if (log.length > shown) { out.textContent = log.slice(0).join('\n'); shown = log.length; }
+      if (jd.job.status === 'done' || jd.job.status === 'error') {
+        out.textContent = (log.join('\n') || '') + (jd.job.returncode !== undefined ? '\n[exit ' + jd.job.returncode + ']' : '');
+        break;
+      }
+    }
   } catch(e){ out.textContent = 'Error: ' + e; }
 }
 </script>
