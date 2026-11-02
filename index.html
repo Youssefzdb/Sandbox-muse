@@ -39,7 +39,8 @@ async function run(){
       const log = jd.log || [];
       if (log.length > shown) { out.textContent = log.slice(0).join('\n'); shown = log.length; }
       if (jd.job.status === 'done' || jd.job.status === 'error') {
-        out.textContent = (log.join('\n') || '') + (jd.job.returncode !== undefined ? '\n[exit ' + jd.job.returncode + ']' : '');
+        const body = log.join('\n') || jd.job.stdout || jd.job.stderr || '';
+        out.textContent = body + (jd.job.returncode !== undefined ? '\n[exit ' + jd.job.returncode + ']' : '');
         break;
       }
     }
