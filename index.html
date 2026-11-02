@@ -4,7 +4,7 @@
 <style>body{font-family:system-ui,sans-serif;max-width:720px;margin:2em auto;padding:0 1em}input{width:100%;padding:.6em}button{padding:.6em 1em;margin-top:.5em}pre{white-space:pre-wrap;background:#111;color:#eee;padding:1em;overflow:auto}</style>
 </head><body>
 <h1>Sandbox Muse — Bridge</h1>
-<p>Type a command allowed by the bridge (for example <code>ls -la</code>). The API key is <strong>never</strong> in this page — it lives only in Vercel Environment Variables, server-side, in <code>api/exec.js</code>.</p>
+<p>Type a command allowed by the bridge (for example <code>ls -la</code>). The API key is <strong>never</strong> in this page — it lives only in Vercel Environment Variables, server-side, in <code>api/exec.js</code>. If the bridge is not published yet, you will see a clear “bridge not configured yet” message — that is expected until BRIDGE_URL and BRIDGE_API_KEY are set in Vercel.</p>
 <input id="cmd" placeholder="ls -la" value="ls -la">
 <button onclick="run()">Run</button>
 <pre id="out"></pre>

@@ -13,7 +13,9 @@ export default async function handler(req, res) {
   if (typeof cmd !== "string" || !cmd.trim()) return res.status(400).json({ error: "cmd required" });
   const bridgeUrl = process.env.BRIDGE_URL;
   const apiKey = process.env.BRIDGE_API_KEY;
-  if (!bridgeUrl || !apiKey) return res.status(500).json({ error: "bridge not configured on server" });
+  // No BRIDGE_URL yet (not published yet) is a normal setup state, not a crash:
+  // deploy first, then set BRIDGE_URL + BRIDGE_API_KEY in Vercel env vars and redeploy.
+  if (!bridgeUrl || !apiKey) return res.status(503).json({ error: "bridge not configured yet: set BRIDGE_URL and BRIDGE_API_KEY in Vercel Environment Variables, then redeploy. Do not put the key in code." });
   const r = await fetch(`${bridgeUrl.replace(/\/$/, "")}/exec`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-API-Key": apiKey },

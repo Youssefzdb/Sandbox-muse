@@ -9,13 +9,15 @@ serverless function. It does NOT contain any API key.
 - `server/bridge-server.py` — reference copy of the bridge server that runs on the sandbox (NOT deployed to Vercel). Run it on the sandbox with `BRIDGE_API_KEY` set. It enforces: auth, allowlist only, workdir confinement, no shell operators, 20s timeout.
 - `package.json` — `type: module`, no dependencies.
 
-## Deploy on Vercel
+## Deploy on Vercel (no BRIDGE_URL needed to publish)
 1. Import this repo in Vercel (Framework: Other / no framework, root directory: this repo).
-2. In Vercel → Project → Settings → Environment Variables, set **server-side only**:
+2. Deploy now, with NO env vars set. The site will load, and `/api/exec` will return a clear `bridge not configured yet` message (503) instead of crashing. That is the expected state before publishing the bridge.
+3. After publishing, in Vercel → Project → Settings → Environment Variables, set **server-side only**:
    - `BRIDGE_URL` = public tunnel URL of the bridge, e.g. `https://bridge.example.com`
      - NEVER `http://localhost:8787` — Vercel (public cloud) cannot reach the sandbox's localhost.
    - `BRIDGE_API_KEY` = the same fixed API key as `BRIDGE_API_KEY` on the bridge server.
-3. Deploy. Open the site, type `ls -la`, click Run. The output comes from the bridge's confined project directory.
+   - Redeploy after setting env vars.
+4. Open the site, type `ls -la`, click Run. The output comes from the bridge's confined project directory.
 
 ## Security — read this before publishing
 - The API key must NEVER be in frontend code, in this repo, or in a public commit. Only in Vercel Environment Variables and in the bridge server's environment.
